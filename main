@@ -1,6 +1,6 @@
 import telebot
 from telebot import types
-from parse import read_file
+from parse import read_file, courses_info
 import os
 
 # Вставь свой токен, полученный от BotFather
@@ -21,7 +21,8 @@ last_message_id = None  # Добавим переменную для хране�
 def start(message):
     global last_message_id  # Объявим переменную глобальной
     markup = types.InlineKeyboardMarkup(row_width=2)
-    courses_buttons = [types.InlineKeyboardButton(course, callback_data=f"course_{course}") for course in courses_info.keys()]
+    courses_buttons = [types.InlineKeyboardButton(course, callback_data=f"course_{course}") for course in
+                       courses_info.keys()]
     global back_to_course_button
     back_to_course_button = types.InlineKeyboardButton("Вернуться к выбору курса", callback_data=f"back_to_course")
     markup.add(*courses_buttons)
@@ -31,6 +32,7 @@ def start(message):
 
     # Сохраняем ID последнего отправленного сообщения
     last_message_id = sent_message.message_id
+
 
 # Обработчик выбора курса
 @bot.callback_query_handler(func=lambda call: call.data.startswith("course_"))
@@ -43,12 +45,14 @@ def choose_course(call):
     course_info = courses_info[current_course]
 
     markup = types.InlineKeyboardMarkup(row_width=1)
-    module_buttons = [types.InlineKeyboardButton(module, callback_data=f"module_{idx}") for idx, module in enumerate(course_info["modules"])]
+    module_buttons = [types.InlineKeyboardButton(module, callback_data=f"module_{idx}") for idx, module in
+                      enumerate(course_info["modules"])]
     markup.add(*module_buttons)
     markup.add(back_to_course_button)
 
     # Заменяем предыдущее сообщение новым с кнопками
     bot.edit_message_text("Теперь выбери модуль:", call.message.chat.id, last_message_id, reply_markup=markup)
+
 
 # Обработчик выбора модуля
 @bot.callback_query_handler(func=lambda call: call.data.startswith("module_"))
@@ -63,12 +67,14 @@ def choose_module(call):
     module_info = course_info["modules"][current_module]
 
     markup = types.InlineKeyboardMarkup(row_width=1)
-    lesson_buttons = [types.InlineKeyboardButton(lesson, callback_data=f"lesson_{idx}") for idx, lesson in enumerate(module_info["lessons"])]
+    lesson_buttons = [types.InlineKeyboardButton(lesson, callback_data=f"lesson_{idx}") for idx, lesson in
+                      enumerate(module_info["lessons"])]
     markup.add(*lesson_buttons)
     markup.add(back_to_course_button)
 
     # Заменяем предыдущее сообщение новым с кнопками
     bot.edit_message_text(f"Теперь выбери урок:", call.message.chat.id, last_message_id, reply_markup=markup)
+
 
 # Обработчик выбора урока
 @bot.callback_query_handler(func=lambda call: call.data.startswith("lesson_"))
@@ -81,28 +87,18 @@ def choose_lesson(call):
     current_module_lesson = f"М{current_module[0]}У{lesson_idx + 1}"  # Используем первый символ модуля как его номер, увеличиваем на 1, так как порядковый номер начинается с 1
 
     # Заменяем предыдущее сообщение новым
-    bot.edit_message_text(f"Ты выбрал {current_module_lesson}. Вот твоя обратная связь:", call.message.chat.id, last_message_id)
-    folder_path = f'C:/Users/User/Desktop/{current_course}'
+    folder_path = f'C:/Users/wwwki/OneDrive/Рабочий стол/{current_course}'
     file_name = f'{current_module_lesson}.txt'
     file_path = os.path.join(folder_path, file_name)
     print(f"Путь к файлу: {file_path}")
     file_content = read_file(file_path)
     print(f"Содержимое файла: {file_content}")
-
-    bot.send_message(call.message.chat.id, file_content)
-
     # Добавляем кнопку для возврата к выбору курса
     markup = types.InlineKeyboardMarkup()
     markup.add(back_to_course_button)
+    bot.edit_message_text(f"Ты выбрал {current_module_lesson}. Вот твоя обратная связь:\n\n {file_content}", call.message.chat.id,
+                          last_message_id, reply_markup=markup)
 
-    # Составляем строку с выбранным курсом, модулем и уроком в нужном формате
-    selected_message = "Спасибо за визит!"
-
-    # Отправляем новое сообщение с выбранными данными
-    sent_message = bot.send_message(call.message.chat.id, selected_message, reply_markup=markup)
-
-    # Сохраняем ID последнего отправленного сообщения
-    last_message_id = sent_message.message_id
 
 # Обработчик кнопки для возврата к выбору курса
 @bot.callback_query_handler(func=lambda call: call.data.startswith("back_to_course"))
@@ -110,13 +106,14 @@ def back_to_course(call):
     global last_message_id
 
     markup = types.InlineKeyboardMarkup(row_width=2)
-    courses_buttons = [types.InlineKeyboardButton(course, callback_data=f"course_{course}") for course in courses_info.keys()]
+    courses_buttons = [types.InlineKeyboardButton(course, callback_data=f"course_{course}") for course in
+                       courses_info.keys()]
     markup.add(*courses_buttons)
 
     # Заменяем предыдущее сообщение новым с кнопками
     bot.edit_message_text("Привет! Выбери курс:", call.message.chat.id, last_message_id, reply_markup=markup)
 
+
 # Запускаем бота
 if __name__ == '__main__':
     bot.polling(none_stop=True)
-    
